@@ -16,7 +16,13 @@
 
 ## Parameters
 - **url_tpl**:
-    request url, replace pagniation number as {page}
+    request url and replace the pagniation number as *{page}*.
+    
+    For eaxmple: 
+    - page 1: http://bbs.cnhubei.com/forum-1.html
+    - page 2: http://bbs.cnhubei.com/forum-2.html
+    - page 3: http://bbs.cnhubei.com/forum-3.html
+    - url_tpl: http://bbs.cnhubei.com/forum-{page}.html
 
 - **keyword**:
     the keyword in the link content
