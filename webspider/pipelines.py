@@ -16,14 +16,30 @@ class WebspiderPipeline(object):
     file = None
 
     def open_spider(self, spider):
+        """
+        called when the spider is opened.
+        :param spider:
+        :return:
+        """
         self.file = open('{0}/items.jl'.format(self.file_path), 'w')
 
     def process_item(self, item, spider):
+        """
+        called for every item pipeline component
+        :param item:
+        :param spider:
+        :return:
+        """
         line = json.dumps(dict(item)) + "\n"
         self.file.write(line)
         return item
 
     def close_spider(self, spider):
+        """
+        called when the spider is closed.
+        :param spider:
+        :return:
+        """
         self.file.close()
 
 
