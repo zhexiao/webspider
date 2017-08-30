@@ -11,7 +11,7 @@ class LinksSpider(scrapy.Spider):
     """
     name = "links"
     urls = []
-    pages = 3
+    pages = 20
 
     def __init__(self, url_tpl, keyword, page_number=None, *args, **kwargs):
         super(LinksSpider, self).__init__(*args, **kwargs)
@@ -27,10 +27,12 @@ class LinksSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        for a_obj in response.css('a.s.xst'):
+        not_found = True
+        for a_obj in response.css('a'):
             text = a_obj.xpath('text()').extract_first()
 
-            if self.keyword in text:
+            if text and self.keyword in text:
+                not_found = False
                 link = a_obj.xpath('@href').extract_first()
                 link = '{}/{}'.format(self.domain, link)
                 print('find', text, link)
@@ -39,6 +41,10 @@ class LinksSpider(scrapy.Spider):
                     'text': text,
                     'link': link
                 }
+
+        if not_found:
+            print('no data found!')
+            yield {}
 
     def validate_page_number(self, page_number):
         """
