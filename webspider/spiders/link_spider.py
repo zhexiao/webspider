@@ -7,57 +7,79 @@ class LinksSpider(scrapy.Spider):
     运行方法：
     scrapy crawl links -L WARNING \
     -a url_tpl=http://bbs.cnhubei.com/forum-3-{page}.html \
-    -a keyword=湖北
+    -a keyword=湖北 \
+    -a start_page=1 \
+    -a end_page=5
     """
+
     name = "links"
     urls = []
-    pages = 20
 
-    def __init__(self, url_tpl, keyword, page_number=None, *args, **kwargs):
+    def __init__(self,
+                 url_tpl, keyword, start_page=1, end_page=3,
+                 *args, **kwargs):
         super(LinksSpider, self).__init__(*args, **kwargs)
+        # 参数
         self.keyword = keyword
+        self.start_page = start_page
+        self.end_page = end_page
         self.domain = '//{0}'.format(urlparse(url_tpl).netloc)
 
-        self.validate_page_number(page_number)
+        # 函数
+        self.validate_page_number()
         self.generate_urls(url_tpl)
 
 
     def start_requests(self):
+        """
+        请求数据
+        :return:
+        """
         for url in self.urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        """
+        解析数据
+        :param response:
+        :return:
+        """
         not_found = True
         for a_obj in response.css('a'):
+            # 读取a里面的内容
             text = a_obj.xpath('text()').extract_first()
 
+            # 查看keyword是否在text里面
             if text and self.keyword in text:
                 not_found = False
                 link = a_obj.xpath('@href').extract_first()
                 link = '{}/{}'.format(self.domain, link)
-                print('find', text, link)
+                print(text, link)
 
                 yield {
                     'text': text,
                     'link': link
                 }
 
+        # 如果没有找到数据，返回空{}
         if not_found:
             print('no data found!')
             yield {}
 
-    def validate_page_number(self, page_number):
+    def validate_page_number(self):
         """
         验证page number
-        :param page_number:
         :return:
         """
+        # 转为整形数据
         try:
-            page_number = int(page_number)
-            if page_number > 0:
-                self.pages = page_number
+            self.start_page = int(self.start_page)
+            self.end_page = int(self.end_page)
         except:
-            pass
+            raise ValueError('page only accept number')
+
+        if self.end_page < self.start_page:
+            raise ValueError('end_page must bigger than start_page')
 
     def generate_urls(self, url_tpl):
         """
@@ -65,5 +87,5 @@ class LinksSpider(scrapy.Spider):
         :param url_tpl:
         :return:
         """
-        for i in range(1, self.pages):
-            self.urls.append(url_tpl.format(page=i))
+        for pg in range(self.start_page, self.end_page):
+            self.urls.append(url_tpl.format(page=pg))
