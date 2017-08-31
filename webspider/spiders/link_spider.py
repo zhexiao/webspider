@@ -14,6 +14,7 @@ class LinksSpider(scrapy.Spider):
 
     name = "links"
     urls = []
+    unique_url = []
 
     def __init__(self,
                  url_tpl, keyword, start_page=1, end_page=3,
@@ -54,8 +55,14 @@ class LinksSpider(scrapy.Spider):
                 not_found = False
                 link = a_obj.xpath('@href').extract_first()
                 link = '{}/{}'.format(self.domain, link)
-                print(text, link)
 
+                # 去除相同URL的数据
+                if link not in self.unique_url:
+                    self.unique_url.append(link)
+                else:
+                    continue
+
+                print(text, link)
                 yield {
                     'text': text,
                     'link': link

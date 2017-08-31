@@ -13,7 +13,7 @@ class WebspiderPipeline(object):
     保存数据
     """
     file_path = '{0}/results'.format(os.getcwd())
-    file = None
+    data = []
 
     def open_spider(self, spider):
         """
@@ -21,7 +21,7 @@ class WebspiderPipeline(object):
         :param spider:
         :return:
         """
-        self.file = open('{0}/items.jl'.format(self.file_path), 'w')
+        self.data = []
 
     def process_item(self, item, spider):
         """
@@ -30,8 +30,7 @@ class WebspiderPipeline(object):
         :param spider:
         :return:
         """
-        line = json.dumps(dict(item)) + "\n"
-        self.file.write(line)
+        self.data.append(dict(item))
         return item
 
     def close_spider(self, spider):
@@ -40,6 +39,7 @@ class WebspiderPipeline(object):
         :param spider:
         :return:
         """
-        self.file.close()
+        with open('{0}/items.jl'.format(self.file_path), 'w') as _file:
+            _file.write(json.dumps(self.data))
 
 
