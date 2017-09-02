@@ -30,7 +30,10 @@ class WebspiderPipeline(object):
         :param spider:
         :return:
         """
-        self.data.append(dict(item))
+        dict_item = dict(item)
+        if len(dict_item) > 0:
+            self.data.append(dict_item)
+
         return item
 
     def close_spider(self, spider):
