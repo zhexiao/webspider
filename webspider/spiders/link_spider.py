@@ -51,7 +51,7 @@ class LinksSpider(scrapy.Spider):
             text = a_obj.xpath('text()').extract_first()
 
             # 查看keyword是否在text里面
-            if text and self.keyword in text:
+            if text and self.keyword in text.lower():
                 not_found = False
                 link = a_obj.xpath('@href').extract_first()
                 link = '{}/{}'.format(self.domain, link)

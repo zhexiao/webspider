@@ -10,7 +10,7 @@
 ```
 > cd webspider
 > scrapy crawl links -L WARNING \
-  -a url_tpl=http://example.com/forum-{page}.html \
+  -a url_tpl="http://example.com/forum-{page}.html" \
   -a keyword=wuhan \
   -a start_page=1 \
   -a end_page=5
