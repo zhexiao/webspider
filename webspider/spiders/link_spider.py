@@ -24,12 +24,13 @@ class LinksSpider(scrapy.Spider):
         self.keyword = keyword
         self.start_page = start_page
         self.end_page = end_page
-        self.domain = '//{0}'.format(urlparse(url_tpl).netloc)
+
+        # 处理url
+        self.http_domain = self.parse_url(url_tpl)
 
         # 函数
         self.validate_page_number()
         self.generate_urls(url_tpl)
-
 
     def start_requests(self):
         """
@@ -54,7 +55,7 @@ class LinksSpider(scrapy.Spider):
             if text and self.keyword in text.lower():
                 not_found = False
                 link = a_obj.xpath('@href').extract_first()
-                link = '{}/{}'.format(self.domain, link)
+                link = '{0}/{1}'.format(self.http_domain, link)
 
                 # 去除相同URL的数据
                 if link not in self.unique_url:
@@ -62,7 +63,7 @@ class LinksSpider(scrapy.Spider):
                 else:
                     continue
 
-                print(text, link)
+                print(text)
                 yield {
                     'text': text,
                     'link': link
@@ -96,3 +97,23 @@ class LinksSpider(scrapy.Spider):
         """
         for pg in range(self.start_page, self.end_page):
             self.urls.append(url_tpl.format(page=pg))
+
+    @staticmethod
+    def parse_url(url_tpl):
+        """
+        对url进行分析处理
+        :param url_tpl:
+        :return:
+        """
+        url_parse = urlparse(url_tpl)
+        http_domain = '{0}://{1}'.format(
+            url_parse.scheme, url_parse.netloc
+        )
+
+        # 对url的path做个判断
+        url_path = urlparse(url_tpl).path.split('/')
+        if len(url_path) > 0:
+            real_path = '/'.join(url_path[:-1])
+            http_domain += real_path
+
+        return http_domain
