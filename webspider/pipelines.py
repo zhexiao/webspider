@@ -80,8 +80,8 @@ class WebspiderPipeline(object):
         # 生成文件的html文件名
         filename = "{0}_{1}_{2}.html".format(
             spider.keyword,
-            spider.start_page,
-            spider.end_page
+            spider.start,
+            spider.end
         )
         # 将a的内容写入到html里面
         with open('{0}/{1}'.format(cls.file_path, filename), 'w') as _file:

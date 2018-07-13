@@ -1,5 +1,6 @@
 import scrapy
 from urllib.parse import urlparse
+from collections import defaultdict
 
 
 class LinksSpider(scrapy.Spider):
@@ -13,32 +14,29 @@ class LinksSpider(scrapy.Spider):
     """
 
     name = "links"
-    urls = []
-    unique_url = []
+    next_page_signal = ('下一页', 'next')
+    seen = defaultdict()
 
     def __init__(self,
-                 url_tpl, keyword, start_page=1, end_page=3,
+                 url, keyword, start=1, end=3,
                  *args, **kwargs):
         super(LinksSpider, self).__init__(*args, **kwargs)
+
         # 参数
+        self.url = url.rstrip('/')
         self.keyword = keyword
-        self.start_page = start_page
-        self.end_page = end_page
+        self.start = start
+        self.end = end
 
-        # 处理url
-        self.http_domain = self.parse_url(url_tpl)
-
-        # 函数
         self.validate_page_number()
-        self.generate_urls(url_tpl)
+        self.analysis_url()
 
     def start_requests(self):
         """
         请求数据
         :return:
         """
-        for url in self.urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+        yield scrapy.Request(url=self.url, callback=self.parse)
 
     def parse(self, response):
         """
@@ -46,74 +44,87 @@ class LinksSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        not_found = True
         for a_obj in response.css('a'):
-            # 读取a里面的内容
-            text = a_obj.xpath('text()').extract_first()
+            a_content = a_obj.xpath('text()').extract_first()
 
-            # 查看keyword是否在text里面
-            if text and self.keyword in text.lower():
-                not_found = False
-                link = a_obj.xpath('@href').extract_first()
-                link = '{0}/{1}'.format(self.http_domain, link)
+            if not a_content:
+                continue
+            a_content = a_content.strip().lower()
 
-                # 去除相同URL的数据
-                if link not in self.unique_url:
-                    self.unique_url.append(link)
-                else:
+            found_url = a_obj.xpath('@href').extract_first()
+            if not found_url:
+                continue
+
+            if found_url.startswith(
+                    ('http', 'https')) and self.netloc not in found_url:
+                continue
+
+            prefix = None
+            if not found_url.startswith(('http', 'https')):
+                prefix = '{0}://'.format(self.scheme)
+
+            if self.netloc not in found_url:
+                prefix = '{0}{1}'.format(prefix, self.netloc)
+
+            if prefix:
+                found_url = '{0}/{1}'.format(prefix, found_url.lstrip('/'))
+
+            if self.keyword.lower() in a_content:
+                # 去重
+                if self.seen.get(found_url):
                     continue
+                self.seen[found_url] = True
 
-                print(text)
+                print(a_content, found_url)
                 yield {
-                    'text': text,
-                    'link': link
+                    'text': a_content,
+                    'link': found_url
                 }
 
-        # 如果没有找到数据，返回空{}
-        if not_found:
-            print('no data found!')
-            yield {}
+            if a_content in self.next_page_signal:
+                yield response.follow(found_url, self.parse)
+
+        # # 读取a里面的内容
+        #     text = a_obj.xpath('text()').extract_first()
+        #
+        #     # 查看keyword是否在text里面
+        #     if text and self.keyword in text.lower():
+        #         not_found = False
+        #         link = a_obj.xpath('@href').extract_first()
+        #         link = '{0}/{1}'.format(self.http_domain, link)
+        #
+        #         # 去除相同URL的数据
+        #         if link not in self.unique_url:
+        #             self.unique_url.append(link)
+        #         else:
+        #             continue
+        #
+        #         print(text)
+        #         yield {
+        #             'text': text,
+        #             'link': link
+        #         }
+        #
+        # # 如果没有找到数据，返回空{}
+        # if not_found:
+        #     print('no data found!')
+        yield {}
 
     def validate_page_number(self):
         """
         验证page number
         :return:
         """
-        # 转为整形数据
-        try:
-            self.start_page = int(self.start_page)
-            self.end_page = int(self.end_page)
-        except:
-            raise ValueError('page only accept number')
+        if not isinstance(self.start, (int,)):
+            raise ValueError('start - 开始页需要为整数')
 
-        if self.end_page < self.start_page:
-            raise ValueError('end_page must bigger than start_page')
+        if not isinstance(self.end, (int,)):
+            raise ValueError('end - 结束页需要为整数')
 
-    def generate_urls(self, url_tpl):
-        """
-        通过url模板和page number生成url
-        :param url_tpl:
-        :return:
-        """
-        for pg in range(self.start_page, self.end_page):
-            self.urls.append(url_tpl.format(page=pg))
+        if self.end < self.start:
+            raise ValueError('分页不合法，结束页大于开始页')
 
-    @staticmethod
-    def parse_url(url_tpl):
-        """
-        对url进行分析处理
-        :param url_tpl:
-        :return:
-        """
-        url_parse = urlparse(url_tpl)
-        http_domain = '{0}://{1}'.format(
-            url_parse.scheme, url_parse.netloc
-        )
-
-        # 对url的path做个判断
-        url_path = urlparse(url_tpl).path.split('/')
-        if len(url_path) > 0:
-            real_path = '/'.join(url_path[:-1])
-            http_domain += real_path
-
-        return http_domain
+    def analysis_url(self):
+        parse_res_obj = urlparse(self.url)
+        self.netloc = getattr(parse_res_obj, 'netloc')
+        self.scheme = getattr(parse_res_obj, 'scheme')
