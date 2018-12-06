@@ -28,6 +28,6 @@ class DemoSpider(BaseSpider):
                 'about': about
             }
 
-        # next_page = response.css('li.next a::attr(href)').extract_first()
-        # if next_page is not None:
-        #     yield response.follow(next_page, callback=self.parse)
+        next_page = response.css('li.next a::attr(href)').extract_first()
+        if next_page is not None:
+            yield response.follow(next_page, callback=self.parse)
