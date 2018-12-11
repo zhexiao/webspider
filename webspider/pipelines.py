@@ -6,6 +6,7 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import pymongo
 
+
 class WebspiderPipeline(object):
     def open_spider(self, spider):
         print('start pipline')
@@ -16,6 +17,7 @@ class WebspiderPipeline(object):
     def process_item(self, item, spider):
         print(item)
         return item
+
 
 class MongoPipeline(object):
     """
