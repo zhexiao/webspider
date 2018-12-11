@@ -4,6 +4,7 @@ scrapy crawl demo --loglevel=WARNING -o quotes.json
 import scrapy
 from .base_spider import BaseSpider
 
+
 class DemoSpider(BaseSpider):
     name = 'demo'
 
@@ -19,15 +20,18 @@ class DemoSpider(BaseSpider):
 
         for d_d in div_data:
             title = d_d.xpath('.//span[@class="text"]/text()').extract_first()
-            tags = d_d.xpath('.//div[@class="tags"]/a[@class="tag"]/text()').extract()
-            about = d_d.xpath('.//span[2]/a/@href').extract_first()
+            tags = d_d.xpath(
+                './/div[@class="tags"]/a[@class="tag"]/text()').extract()
+            about_url = d_d.xpath('.//span[2]/a/@href').extract_first()
 
+            # 生成绝对URL地址
+            about_url = response.urljoin(about_url)
             yield {
                 'title': title,
                 'tags': tags,
-                'about': about
+                'about': about_url
             }
-
-        next_page = response.css('li.next a::attr(href)').extract_first()
-        if next_page is not None:
-            yield response.follow(next_page, callback=self.parse)
+        #
+        # next_page = response.css('li.next a::attr(href)').extract_first()
+        # if next_page is not None:
+        #     yield response.follow(next_page, callback=self.parse)

@@ -4,6 +4,7 @@
 import scrapy
 from .base_spider import BaseSpider
 
+
 class DemoSpider(BaseSpider):
     name = 'lagou'
 
